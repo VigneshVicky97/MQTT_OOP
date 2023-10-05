@@ -19,8 +19,8 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 
-const char* ssid     = "Vicky";
-const char* password = "vicky12345";
+const char* ssid     = "ACTFIBERNET";
+const char* password = "act12345";
 
 #define LED_PIN 2
 #define BUTTON_PIN 0
@@ -41,10 +41,14 @@ class MQTT1
   public:
     MQTT1() {}
 
-    void init(const char *mqttBroker, int mqttPort)
+    MQTT1(const char *mqttBroker, int mqttPort)
     {
       this->mqttBroker = mqttBroker;
       this->mqttPort = mqttPort;
+    }
+
+    void init()
+    {
       // setup the mqtt server and callback
       client.setServer(mqttBroker, mqttPort);
       // client.setCallback(callback);
@@ -105,63 +109,65 @@ class MQTT1
           delay(5000);
         }
       }
-
+    }
 };
 
-// Callback function whenever an MQTT message is received
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  String message;
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print(message += (char)payload[i]);
-  }
-  Serial.println();
+MQTT1 mqtt1(mqttBroker, mqttPort);
 
-  // Switch on the LED if 'ON' was received
-  if (message == "ON")
-  {
-    Serial.println("Turning ON Built In LED..");
-    led.on();
-  }
-  else
-  {
-    Serial.println("Turning OFF Built In LED..");
-    led.off();
-  }
-}
+// // Callback function whenever an MQTT message is received
+// void callback(char *topic, byte *payload, unsigned int length)
+// {
+//   Serial.print("Message arrived [");
+//   Serial.print(topic);
+//   Serial.print("] ");
+//   String message;
+//   for (int i = 0; i < length; i++)
+//   {
+//     Serial.print(message += (char)payload[i]);
+//   }
+//   Serial.println();
 
-void reconnect()
-{
-  // Loop until we're reconnected
-  while (!client.connected())
-  {
-    Serial.print("Attempting MQTT connection...");
+//   // Switch on the LED if 'ON' was received
+//   if (message == "ON")
+//   {
+//     Serial.println("Turning ON Built In LED..");
+//     led.on();
+//   }
+//   else
+//   {
+//     Serial.println("Turning OFF Built In LED..");
+//     led.off();
+//   }
+// }
 
-    // Create a random client ID
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
+// void reconnect()
+// {
+//   // Loop until we're reconnected
+//   while (!client.connected())
+//   {
+//     Serial.print("Attempting MQTT connection...");
 
-    // Attempt to connect
-    if (client.connect(clientId.c_str()))
-    {
-      Serial.println("connected");
-      // Subscribe to topic
-      client.subscribe(subscribeTopic);
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-}
+//     // Create a random client ID
+//     String clientId = "ESP32Client-";
+//     clientId += String(random(0xffff), HEX);
+
+//     // Attempt to connect
+//     if (client.connect(clientId.c_str()))
+//     {
+//       Serial.println("connected");
+//       // Subscribe to topic
+//       client.subscribe(subscribeTopic);
+//     }
+//     else
+//     {
+//       Serial.print("failed, rc=");
+//       Serial.print(client.state());
+//       Serial.println(" try again in 5 seconds");
+//       // Wait 5 seconds before retrying
+//       delay(5000);
+//     }
+//   }
+// }
 
 void setup()
 {
@@ -172,40 +178,33 @@ void setup()
   wifiAP1.init();
   wifiAP1.connect();
 
+  mqtt1.init();
+
   // setup the mqtt server and callback
-  client.setServer(mqttBroker, mqttPort);
-  client.setCallback(callback);
+  // client.setServer(mqttBroker, mqttPort);
+  // client.setCallback(callback);
 }
 
 void loop()
 {
-  // if(button.isPressed())
+  // // Listen for mqtt message and reconnect if disconnected
+  // if (!client.connected())
   // {
-  //   led.on();
-  //   // Serial.println("Pressed");
+  //   reconnect();
   // }
-  // else{
-  //   led.off();
+  // client.loop();
+
+  // // publish message after certain time.
+  // unsigned long now = millis();
+  // if (now - lastMsg > 10000)
+  // {
+  //   lastMsg = now;
+  //   // Read the Hall Effect sensor value
+  //   int hallEffectValue = hallRead();
+
+  //   snprintf(msg, MSG_BUFFER_SIZE, "%d", hallEffectValue);
+  //   Serial.print("Publish message: ");
+  //   Serial.println(msg);
+  //   client.publish(publishTopic, msg);
   // }
-
-  // Listen for mqtt message and reconnect if disconnected
-  if (!client.connected())
-  {
-    reconnect();
-  }
-  client.loop();
-
-  // publish message after certain time.
-  unsigned long now = millis();
-  if (now - lastMsg > 10000)
-  {
-    lastMsg = now;
-    // Read the Hall Effect sensor value
-    int hallEffectValue = hallRead();
-
-    snprintf(msg, MSG_BUFFER_SIZE, "%d", hallEffectValue);
-    Serial.print("Publish message: ");
-    Serial.println(msg);
-    client.publish(publishTopic, msg);
-  }
 }
