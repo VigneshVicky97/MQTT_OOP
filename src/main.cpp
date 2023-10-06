@@ -7,6 +7,7 @@
 // Your MQTT broker ID
 const char *mqttBroker = "broker.hivemq.com";
 int mqttPort = 1883;
+
 // MQTT topics
 const char *publishTopic = "halleffect";
 const char *subscribeTopic = "led_oop";
