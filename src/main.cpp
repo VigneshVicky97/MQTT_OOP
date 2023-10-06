@@ -2,8 +2,8 @@
 #include "Led.h"
 #include "Button.h"
 #include "WiFiAP1.h"
-#include <PubSubClient.h>
 
+<<<<<<< HEAD
 // Your MQTT broker ID
 const char *mqttBroker = "broker.hivemq.com";
 int mqttPort = 1883;
@@ -11,17 +11,25 @@ int mqttPort = 1883;
 // MQTT topics
 const char *publishTopic = "halleffect";
 const char *subscribeTopic = "led_oop";
+=======
+// MyClass
+#include "MyClass.h"
+MyClass myClassObject;
+>>>>>>> eeee4681118e881b91bb16591004f05f6ac78ecc
 
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE (5)
-char msg[MSG_BUFFER_SIZE];
+#include <ArduinoJson.h>
+#include <MQTTClient.h>
+MQTTClient mqttClient;
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+#include <WiFi.h>
 
+// const char* ssid     = "ACTFIBERNET";
+// const char* password = "act12345";
 
-const char* ssid     = "ACTFIBERNET";
-const char* password = "act12345";
+const char* ssid = "Coconut-Porto3-EE9";
+const char* password = "1234567890";
+
+WiFiAP1 wifiAP1(ssid, password);
 
 #define LED_PIN 2
 #define BUTTON_PIN 0
@@ -29,183 +37,50 @@ const char* password = "act12345";
 
 Led led(LED_PIN);
 Button button(BUTTON_PIN);
-WiFiAP1 wifiAP1(ssid, password);
-
-class MQTT1
-{
-  private:
-    const char *mqttBroker;
-    int mqttPort;
-    const char *publishTopic;
-    const char *subscribeTopic;
-
-  public:
-    MQTT1() {}
-
-    MQTT1(const char *mqttBroker, int mqttPort)
-    {
-      this->mqttBroker = mqttBroker;
-      this->mqttPort = mqttPort;
-    }
-
-    void init()
-    {
-      // setup the mqtt server and callback
-      client.setServer(mqttBroker, mqttPort);
-      // client.setCallback(callback);
-    }
-
-    // Callback function whenever an MQTT message is received
-    void callback(char *topic, byte *payload, unsigned int length)
-    {
-      this->subscribeTopic = topic;
-
-      Serial.print("Message arrived [");
-      Serial.print(topic);
-      Serial.print("] ");
-      String message;
-      for (int i = 0; i < length; i++)
-      {
-        Serial.print(message += (char)payload[i]);
-      }
-      Serial.println();
-
-      // Switch on the LED if 'ON' was received
-      if (message == "ON")
-      {
-        Serial.println("Turning ON Built In LED..");
-        // led.on();
-      }
-      else
-      {
-        Serial.println("Turning OFF Built In LED..");
-        // led.off();
-      }
-    }
-
-    void reconnect()
-    {
-      // Loop until we're reconnected
-      while (!client.connected())
-      {
-        Serial.print("Attempting MQTT connection...");
-
-        // Create a random client ID
-        String clientId = "ESP32Client-";
-        clientId += String(random(0xffff), HEX);
-
-        // Attempt to connect
-        if (client.connect(clientId.c_str()))
-        {
-          Serial.println("connected");
-          // Subscribe to topic
-          client.subscribe(subscribeTopic);
-        }
-        else
-        {
-          Serial.print("failed, rc=");
-          Serial.print(client.state());
-          Serial.println(" try again in 5 seconds");
-          // Wait 5 seconds before retrying
-          delay(5000);
-        }
-      }
-    }
-};
-
-MQTT1 mqtt1(mqttBroker, mqttPort);
-
-// // Callback function whenever an MQTT message is received
-// void callback(char *topic, byte *payload, unsigned int length)
-// {
-//   Serial.print("Message arrived [");
-//   Serial.print(topic);
-//   Serial.print("] ");
-//   String message;
-//   for (int i = 0; i < length; i++)
-//   {
-//     Serial.print(message += (char)payload[i]);
-//   }
-//   Serial.println();
-
-//   // Switch on the LED if 'ON' was received
-//   if (message == "ON")
-//   {
-//     Serial.println("Turning ON Built In LED..");
-//     led.on();
-//   }
-//   else
-//   {
-//     Serial.println("Turning OFF Built In LED..");
-//     led.off();
-//   }
-// }
-
-// void reconnect()
-// {
-//   // Loop until we're reconnected
-//   while (!client.connected())
-//   {
-//     Serial.print("Attempting MQTT connection...");
-
-//     // Create a random client ID
-//     String clientId = "ESP32Client-";
-//     clientId += String(random(0xffff), HEX);
-
-//     // Attempt to connect
-//     if (client.connect(clientId.c_str()))
-//     {
-//       Serial.println("connected");
-//       // Subscribe to topic
-//       client.subscribe(subscribeTopic);
-//     }
-//     else
-//     {
-//       Serial.print("failed, rc=");
-//       Serial.print(client.state());
-//       Serial.println(" try again in 5 seconds");
-//       // Wait 5 seconds before retrying
-//       delay(5000);
-//     }
-//   }
-// }
 
 void setup()
 {
   Serial.begin(115200);
+
+  // Configure mqttClient with the necessary config with a json object:
+  StaticJsonDocument<384> doc;
+  JsonObject mqtt = doc.createNestedObject("mqtt");
+  mqtt["enabled"] = true;
+  mqtt["reconnect_mqtt"] = true;
+  mqtt["reconnect_retries"] = 10;
+  mqtt["reconnect_time_ms"] = 10000;
+  mqtt["server"] = "broker.hivemq.com";
+  mqtt["port"] = 1883;
+  mqtt["id_name"] = "iot-button";
+  mqtt["enable_user_and_pass"] = false;
+  mqtt["user_name"] = "userName";
+  mqtt["user_password"] = "userPassword";
+  mqtt["enable_certificates"] = false;
+  mqtt["ca_file"] = "/certs/ca.crt";
+  mqtt["cert_file"] = "/certs/cert.der";
+  mqtt["key_file"] = "/certs/private.der";
+  mqtt["enable_websockets"] = false;
+  mqtt["websockets_path"] = "/";
+  mqtt["pub_topic"][0] = "/iot-button/feed";
+
+  serializeJsonPretty(doc, Serial);
+  mqttClient.setConfig(mqtt);
+  // Set MyClass MQTT client and its observer callbacks:
+  myClassObject.setMQTTClient(&mqttClient);
+
 
   led.init(LOW);
   button.init();
   wifiAP1.init();
   wifiAP1.connect();
 
-  mqtt1.init();
+  mqttClient.setup();
 
-  // setup the mqtt server and callback
-  // client.setServer(mqttBroker, mqttPort);
-  // client.setCallback(callback);
+  Serial.println("###  Looping time\n");
 }
 
 void loop()
 {
-  // // Listen for mqtt message and reconnect if disconnected
-  // if (!client.connected())
-  // {
-  //   reconnect();
-  // }
-  // client.loop();
-
-  // // publish message after certain time.
-  // unsigned long now = millis();
-  // if (now - lastMsg > 10000)
-  // {
-  //   lastMsg = now;
-  //   // Read the Hall Effect sensor value
-  //   int hallEffectValue = hallRead();
-
-  //   snprintf(msg, MSG_BUFFER_SIZE, "%d", hallEffectValue);
-  //   Serial.print("Publish message: ");
-  //   Serial.println(msg);
-  //   client.publish(publishTopic, msg);
-  // }
+  // MyClass Loop:
+  myClassObject.loop();
 }
