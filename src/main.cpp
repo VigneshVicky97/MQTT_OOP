@@ -85,7 +85,7 @@ class MQTT1
       {
         Serial.print("Attempting MQTT connection...");
 
-        // Create a random client ID
+        // Create a random client
         String clientId = "ESP32Client-";
         clientId += String(random(0xffff), HEX);
 
@@ -95,6 +95,7 @@ class MQTT1
           Serial.println("connected");
           // Subscribe to topic
           client.subscribe(subscribeTopic);
+    
         }
         else
         {
